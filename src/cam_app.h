@@ -27,14 +27,14 @@ ivv-itc@lists.nasa.gov
 #include "cam_msg.h"
 #include "cam_events.h"
 #include "cam_version.h"
-#include "cam_device.h"
-#include "cam_child.h"
 
 /*
 ** This is the specified pipe depth for the app, meaning how many messages will be
 **   queued in the pipe.  32 is the cFE default 
 */
 #define CAM_PIPE_DEPTH  32
+#define MAX_IMAGE_LENGTH 1080
+#define IMAGE_FILE_PATH "/data/img.jpg"
 
 /* 
 ** The cFE convention is to put all global app data in a single struct. 
@@ -50,6 +50,7 @@ typedef struct
     ** its OWN telemetry that you want to be sent
     */
     CAM_Hk_tlm_t   HkTelemetryPkt;   /* CAM Housekeeping Telemetry Packet */
+    CAM_Pic_tlm_t CamTelemtryPkt;
     
     /*
     ** Operational data (not reported in housekeeping)...
@@ -57,17 +58,7 @@ typedef struct
     CFE_MSG_Message_t * MsgPtr;     /* Pointer to msg received on software bus */
     CFE_SB_PipeId_t CmdPipe;    /* Pipe Id for HK command pipe */
     uint32 RunStatus;           /* App run status for controlling the application state */
-    CAM_Exp_tlm_t	Exp_Pkt;    /* Experiment Packet */
 	
-	/*
-	** Child data 
-	*/
-	uint32   ChildTaskID;		/* Task ID provided by CFS on initialization */
-	uint32   data_mutex;         
-    uint32   sem_id;            /* Semaphore ID */
-    uint32   Exp;
-    uint32   State; 				
-	uint32   Size;				/* Resolution of picture */	
 } CAM_AppData_t;
 
 
@@ -89,8 +80,9 @@ int32 CAM_AppInit(void);
 void  CAM_ProcessCommandPacket(void);
 void  CAM_ProcessGroundCommand(void);
 void  CAM_ReportHousekeeping(void);
-void  CAM_ProcessPR(void);
 void  CAM_ResetCounters(void);
+void  CAM_TakePicture(void);
+void  CAM_SendPicture(void);
 
 /* 
 ** This function is provided as an example of verifying the size of the command

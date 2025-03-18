@@ -170,11 +170,9 @@ int32 CAM_AppInit(void)
         /*
         ** Initialize Application Data
         */
-        CAM_AppData.State = CAM_STOP;
-        CAM_AppData.Exp = 0;
-        CAM_AppData.Size = size_160x120;
         CAM_AppData.HkTelemetryPkt.CommandCount       = 0;
         CAM_AppData.HkTelemetryPkt.CommandErrorCount  = 0;
+        CAM_AppData.CamTelemetryPkt.length = 0;
 
         /* 
         ** Create child task
@@ -193,9 +191,9 @@ int32 CAM_AppInit(void)
             CFE_SB_ValueToMsgId(CAM_HK_TLM_MID),
             CAM_HK_TLM_LNGTH);
         
-        CFE_MSG_Init(CFE_MSG_PTR(CAM_AppData.Exp_Pkt.TlmHeader),
-            CFE_SB_ValueToMsgId(CAM_EXP_TLM_MID),
-            CAM_EXP_TLM_LNGTH);
+        CFE_MSG_Init(CFE_MSG_PTR(CAM_AppData.CamTelemtryPkt.TlmHeader),
+            CFE_SB_ValueToMsgId(CAM_PIC_TLM_MID),
+            CAM_PIC_TLM_LNGTH);
         
         /* 
         ** Important to send an information event that the app has initialized. this is
@@ -223,9 +221,9 @@ int32 CAM_AppInit(void)
 void CAM_ProcessCommandPacket(void)
 {
     CFE_SB_MsgId_t MsgId = CFE_SB_INVALID_MSG_ID;
-    OS_MutSemTake(CAM_AppData.data_mutex);
-        CFE_MSG_GetMsgId(CAM_AppData.MsgPtr, &MsgId);
-    OS_MutSemGive(CAM_AppData.data_mutex);
+    
+    CFE_MSG_GetMsgId(CAM_AppData.MsgPtr, &MsgId);
+   
     switch (CFE_SB_MsgIdToValue(MsgId))
     {
         /*
@@ -265,26 +263,24 @@ void CAM_ProcessCommandPacket(void)
 void CAM_ProcessGroundCommand(void)
 {
     // Local variables
-    uint8  state = 1;
-    uint16 x = 0;
     CFE_SB_MsgId_t MsgId = CFE_SB_INVALID_MSG_ID;
     CFE_MSG_FcnCode_t CommandCode = 0;
 
     /*
     ** MsgId is only needed if the command code is not recognized. See default case below 
     */
-    OS_MutSemTake(CAM_AppData.data_mutex);
+    
         CFE_MSG_GetMsgId(CAM_AppData.MsgPtr, &MsgId);
-    OS_MutSemGive(CAM_AppData.data_mutex);
+   
 
     /*
     ** Ground Commands, by definition, has a command code associated with them.  Pull
     ** this command code from the message and then process the action associated with
     ** the command code.
     */
-    OS_MutSemTake(CAM_AppData.data_mutex);
+    
         CFE_MSG_GetFcnCode(CAM_AppData.MsgPtr, &CommandCode);
-    OS_MutSemGive(CAM_AppData.data_mutex);
+   
     switch (CommandCode)
     {
         /*
@@ -297,9 +293,8 @@ void CAM_ProcessGroundCommand(void)
             */
             if (CAM_VerifyCmdLength(CAM_AppData.MsgPtr, sizeof(CAM_NoArgsCmd_t)))
             {
-                OS_MutSemTake(CAM_AppData.data_mutex);
-                    CAM_AppData.HkTelemetryPkt.CommandCount++;
-                OS_MutSemGive(CAM_AppData.data_mutex);
+                CAM_AppData.HkTelemetryPkt.CommandCount++;
+               
                 CFE_EVS_SendEvent(CAM_COMMANDNOP_INF_EID, CFE_EVS_EventType_INFORMATION, "CAM App: NOOP command");
             }
             break;
@@ -310,179 +305,20 @@ void CAM_ProcessGroundCommand(void)
         case CAM_RESET_COUNTERS_CC:
             CAM_ResetCounters();
             break;
-        
-        /*
-        ** Stop Science Command
-        */
-        case CAM_STOP_CC:
-            OS_MutSemTake(CAM_AppData.data_mutex);
-                CAM_AppData.HkTelemetryPkt.CommandCount++;
-                CAM_AppData.State = CAM_STOP;
-            OS_MutSemGive(CAM_AppData.data_mutex);
-            CFE_EVS_SendEvent(CAM_STOP_INF_EID, CFE_EVS_EventType_INFORMATION,
-                "CAM App: STOP command");
-            break;
-            
-        /*
-        ** Pause Science Command
-        */
-        case CAM_PAUSE_CC:
-            OS_MutSemTake(CAM_AppData.data_mutex);
-                CAM_AppData.HkTelemetryPkt.CommandCount++;
-                CAM_AppData.State = CAM_PAUSE;
-            OS_MutSemGive(CAM_AppData.data_mutex);
-            CFE_EVS_SendEvent(CAM_PAUSE_INF_EID, CFE_EVS_EventType_INFORMATION,
-                "CAM App: PAUSE command");
-            break;
-            
-        /*
-        ** Resume Science Command
-        */
-        case CAM_RESUME_CC:
-            OS_MutSemTake(CAM_AppData.data_mutex);
-                CAM_AppData.HkTelemetryPkt.CommandCount++;
-                CAM_AppData.State = CAM_RUN;
-            OS_MutSemGive(CAM_AppData.data_mutex);
-            CFE_EVS_SendEvent(CAM_RUN_INF_EID, CFE_EVS_EventType_INFORMATION,
-                "CAM App: RESUME command");
-            break;
 
-        /*
-        ** Timeout Command
-        */
-        case CAM_TIMEOUT_CC:
-            OS_MutSemTake(CAM_AppData.data_mutex);
-                CAM_AppData.HkTelemetryPkt.CommandCount++;
-                CAM_AppData.State = CAM_TIME;
-            OS_MutSemGive(CAM_AppData.data_mutex);
-            CFE_EVS_SendEvent(CAM_TIMEOUT_INF_EID, CFE_EVS_EventType_INFORMATION,
-                "CAM App: TIMEOUT command");
+        case CAM_TAKE_PIC_CC:
+            CAM_TakePicture():
             break;
-
-        /*
-        ** Low Voltage Command
-        */
-        case CAM_LOW_VOLTAGE_CC:
-            OS_MutSemTake(CAM_AppData.data_mutex);
-                CAM_AppData.HkTelemetryPkt.CommandCount++;
-                CAM_AppData.State = CAM_LOW_VOLTAGE;
-            OS_MutSemGive(CAM_AppData.data_mutex);
-            CFE_EVS_SendEvent(CAM_LOW_VOLTAGE_INT_EID, CFE_EVS_EventType_INFORMATION,
-                "CAM App: LOW_VOLTAGE command");
-            break;
-        
-        /*
-        ** EXP 1 - Small
-        */
-        case CAM_EXP1_CC:
-            OS_MutSemTake(CAM_AppData.data_mutex);
-                CAM_AppData.HkTelemetryPkt.CommandCount++;
-                CAM_AppData.Exp = 1;
-            OS_MutSemGive(CAM_AppData.data_mutex);
-            CFE_EVS_SendEvent(CAM_EXP1_EID, CFE_EVS_EventType_INFORMATION, "CAM App: EXP 1 Command - Small Picture");
-            OS_BinSemGive(CAM_AppData.sem_id);
-            break;
-
-        /*
-        ** EXP 2  - Medium
-        */
-        case CAM_EXP2_CC:
-            OS_MutSemTake(CAM_AppData.data_mutex);
-                CAM_AppData.HkTelemetryPkt.CommandCount++;
-                CAM_AppData.Exp = 2;
-            OS_MutSemGive(CAM_AppData.data_mutex);
-            CFE_EVS_SendEvent(CAM_EXP2_EID, CFE_EVS_EventType_INFORMATION, "CAM App: EXP 2 Command - Medium Picture");
-            OS_BinSemGive(CAM_AppData.sem_id);
-            break;
-        /*
-        ** EXP 3 - Large
-        */
-        case CAM_EXP3_CC:
-            OS_MutSemTake(CAM_AppData.data_mutex);
-                CAM_AppData.HkTelemetryPkt.CommandCount++;
-                CAM_AppData.Exp = 3;
-            OS_MutSemGive(CAM_AppData.data_mutex);
-            CFE_EVS_SendEvent(CAM_EXP3_EID, CFE_EVS_EventType_INFORMATION, "CAM App: EXP 3 Command - Large Picture");
-            OS_BinSemGive(CAM_AppData.sem_id);
-            break;
-
-        /*
-        **  Hardware Check
-        */
-        case CAM_HW_CHECK_CC:
-            CAM_AppData.HkTelemetryPkt.CommandCount++;
-            state = OS_SUCCESS;
-            state = CAM_init_i2c();
-            if (state != OS_SUCCESS)
-            {   
-                CFE_EVS_SendEvent(CAM_INIT_I2C_ERR_EID,CFE_EVS_EventType_ERROR, "CAM App: I2C Failure");
-            }
-            else
-            {
-                state = CAM_init_spi();
-                if (state != OS_SUCCESS)
-                {   
-                    CFE_EVS_SendEvent(CAM_INIT_SPI_ERR_EID,CFE_EVS_EventType_ERROR, "CAM App: SPI Failure"); 
-                }
-                else
-                {  
-                    CFE_EVS_SendEvent(CAM_HW_CHECK_EID, CFE_EVS_EventType_INFORMATION, "CAM App: Hardware Checked Out");
-                }
-            }
-            break;
-
-        /*
-        **  Debug and Testing CC
-        */
-        case CAM_HWLIB_INIT_I2C_CC:
-            CAM_init_i2c();
-            break;
-        case CAM_HWLIB_INIT_SPI_CC:
-            CAM_init_spi();
-            break;
-        case CAM_HWLIB_CONFIG_CC:
-            CAM_config();
-            break;
-        case CAM_HWLIB_JPEG_INIT_CC:
-            CAM_jpeg_init();
-            break;
-        case CAM_HWLIB_YUV422_CC:
-            CAM_yuv422();
-            break;
-        case CAM_HWLIB_JPEG_CC:
-            CAM_jpeg();
-            break;
-        case CAM_HWLIB_SETUP_CC:
-            CAM_setup();
-            break;
-        case CAM_HWLIB_SETSIZE_CC:
-            CAM_setSize(CAM_AppData.Size);
-            break;
-        case CAM_HWLIB_CAPTURE_PREP_CC:
-            CAM_capture_prep();
-            break;
-        case CAM_HWLIB_CAPTURE_CC:
-            CAM_capture();
-            break;
-        case CAM_HWLIB_READ_PREP_CC:
-            OS_MutSemTake(CAM_AppData.data_mutex);
-                CAM_AppData.Exp_Pkt.msg_count = 0x0000;
-            OS_MutSemGive(CAM_AppData.data_mutex);
-            CAM_read_prep((char*) &CAM_AppData.Exp_Pkt.data, (uint16*) &x);
-            break;
-        case CAM_HWLIB_READ_CC:
-            x = 1;
-            state = 1;
-            CAM_fifo(&x, &state);
-            break;
+        case CAM_SEND_PIC_CC:
+            CAM_SendPicture();
 
         /*
         ** Invalid Command Codes
         */
         default:
-            OS_MutSemTake(CAM_AppData.data_mutex);
+            
                 CAM_AppData.HkTelemetryPkt.CommandErrorCount++;
-            OS_MutSemGive(CAM_AppData.data_mutex);
+           
             CFE_EVS_SendEvent(CAM_COMMAND_ERR_EID, CFE_EVS_EventType_ERROR, 
                 "CAM App: invalid command code for packet MID = 0x%x CC = 0x%x", CFE_SB_MsgIdToValue(MsgId), CommandCode);
             break;
@@ -501,12 +337,41 @@ void CAM_ProcessGroundCommand(void)
 */
 void CAM_ReportHousekeeping(void)
 {
-    OS_MutSemTake(CAM_AppData.data_mutex);
+    
         CFE_SB_TimeStampMsg((CFE_MSG_Message_t *) &CAM_AppData.HkTelemetryPkt);
         CFE_SB_TransmitMsg((CFE_MSG_Message_t *) &CAM_AppData.HkTelemetryPkt, true);
-    OS_MutSemGive(CAM_AppData.data_mutex);
+   
     return;
 } 
+
+void CAM_SendPicture(void)
+{
+    
+    CFE_SB_TimeStampMsg((CFE_MSG_Message_t *) &CAM_AppData.CamTelemetryPkt);
+    CFE_SB_TransmitMsg((CFE_MSG_Message_t *) &CAM_AppData.CamTelemetryPkt, true);
+
+    memset(CAM_AppData.CamTelemetryPkt.data, 0, MAX_IMAGE_SIZE);
+    CAM_AppData.CamTelemetryPkt.length = 0;
+   
+    return;
+} 
+
+void CAM_TakePicture(void)
+{
+    CFE_EVS_SendEvent(0, CFE_EVS_INFORMATION, "CAM: Taking picture");
+
+    FILE *file = fopen(IMAGE_FILE_PATH, "rb");
+    if(file)
+    {
+        CAM_AppData.CamTelemetryPkt.length = fread(CAM_AppData.CamTelemetryPkt.data, 1, MAX_IMAGE_SIZE, file);
+        fclose(file);
+        CFE_EVS_SendEvent(0, CFE_EVS_INFORMATION, "CAM: Took picture of size %d", CAM_AppData.CamTelemetryPkt.length);
+    }
+    else
+    {
+        CFE_EVS_SendEvent(0, CFE_EVS_INFORMATION, "CAM: Failed to take picture");
+    }
+}
 
 /*
 **  Name:  CAM_ResetCounters                                               
