@@ -317,11 +317,11 @@ void CAM_ReportHousekeeping(void)
 
 void CAM_SendPicture(void)
 {
-    
+    CFE_EVS_SendEvent(CAM_COMMANDRST_INF_EID, CFE_EVS_EventType_INFORMATION, "CAM: Sending Picture");
     CFE_SB_TimeStampMsg((CFE_MSG_Message_t *) &CAM_AppData.CamTelemetryPkt);
     CFE_SB_TransmitMsg((CFE_MSG_Message_t *) &CAM_AppData.CamTelemetryPkt, true);
 
-    memset(CAM_AppData.CamTelemetryPkt.data, 0, MAX_IMAGE_SIZE);
+    memset(CAM_AppData.CamTelemetryPkt.data, 0, MAX_IMAGE_LENGTH);
     CAM_AppData.CamTelemetryPkt.length = 0;
    
     return;
@@ -334,13 +334,13 @@ void CAM_TakePicture(void)
     FILE *file = fopen(IMAGE_FILE_PATH, "rb");
     if(file)
     {
-        CAM_AppData.CamTelemetryPkt.length = fread(CAM_AppData.CamTelemetryPkt.data, 1, MAX_IMAGE_SIZE, file);
+        CAM_AppData.CamTelemetryPkt.length = fread(CAM_AppData.CamTelemetryPkt.data, 1, MAX_IMAGE_LENGTH, file);
         fclose(file);
-        CFE_EVS_SendEvent(0, CFE_EVS_INFORMATION, "CAM: Took picture of size %d", CAM_AppData.CamTelemetryPkt.length);
+        CFE_EVS_SendEvent(CAM_COMMANDRST_INF_EID, CFE_EVS_EventType_INFORMATION, "CAM: Took picture of size %d", CAM_AppData.CamTelemetryPkt.length);
     }
     else
     {
-        CFE_EVS_SendEvent(0, CFE_EVS_INFORMATION, "CAM: Failed to take picture");
+        CFE_EVS_SendEvent(CAM_COMMANDRST_INF_EID, CFE_EVS_EventType_INFORMATION, "CAM: Failed to take picture");
     }
 }
 
@@ -380,7 +380,7 @@ bool CAM_VerifyCmdLength(CFE_MSG_Message_t * msg, uint16 ExpectedLength)
         CFE_MSG_GetFcnCode(msg, &CommandCode);
 
         CFE_EVS_SendEvent(CAM_LEN_ERR_EID, CFE_EVS_EventType_ERROR,
-           "Invalid msg length: ID = 0x%X CC = %d Len = %ld Expected = %d",
+           "Invalid msg length: ID = 0x%X CC = %d Len = %d Expected = %d",
               CFE_SB_MsgIdToValue(MessageID), CommandCode, ActualLength, ExpectedLength);
 
         result = false;
