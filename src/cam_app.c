@@ -148,41 +148,12 @@ int32 CAM_AppInit(void)
         }
 
         /*
-        ** Create data mutex
-        */
-        status = OS_MutSemCreate(&CAM_AppData.data_mutex, CAM_MUTEX_NAME, 0);
-        if (status != OS_SUCCESS)
-        {
-            CFE_EVS_SendEvent(CAM_MUTEX_ERR_EID, CFE_EVS_EventType_ERROR, "CAM APP: Create mutex error %d", status);
-            break;
-        }
-
-        /* 
-        ** Create child task wakeup semaphore
-        */
-        status = OS_BinSemCreate(&CAM_AppData.sem_id, CAM_SEM_NAME, 0, 0);
-        if (status != OS_SUCCESS)
-        {
-            CFE_EVS_SendEvent(CAM_SEMAPHORE_ERR_EID, CFE_EVS_EventType_ERROR, "CAM APP: Semaphore create error %d", status);
-            break;
-        }
-
-        /*
         ** Initialize Application Data
         */
         CAM_AppData.HkTelemetryPkt.CommandCount       = 0;
         CAM_AppData.HkTelemetryPkt.CommandErrorCount  = 0;
         CAM_AppData.CamTelemetryPkt.length = 0;
 
-        /* 
-        ** Create child task
-        */
-        status = CAM_ChildInit();
-        if (status != CFE_SUCCESS)
-        {
-            CFE_EVS_SendEvent(CAM_INIT_CHILD_ERR_EID, CFE_EVS_EventType_ERROR, "CAM App: Child task init error %d", status);
-            break;
-        }
 
         /* Initialize the published HK message - this HK message will contain the telemetry
         ** that has been defined in the CAM_HkTelemetryPkt for this app
@@ -191,7 +162,7 @@ int32 CAM_AppInit(void)
             CFE_SB_ValueToMsgId(CAM_HK_TLM_MID),
             CAM_HK_TLM_LNGTH);
         
-        CFE_MSG_Init(CFE_MSG_PTR(CAM_AppData.CamTelemtryPkt.TlmHeader),
+        CFE_MSG_Init(CFE_MSG_PTR(CAM_AppData.CamTelemetryPkt.TlmHeader),
             CFE_SB_ValueToMsgId(CAM_PIC_TLM_MID),
             CAM_PIC_TLM_LNGTH);
         

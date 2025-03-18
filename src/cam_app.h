@@ -33,7 +33,7 @@ ivv-itc@lists.nasa.gov
 **   queued in the pipe.  32 is the cFE default 
 */
 #define CAM_PIPE_DEPTH  32
-#define MAX_IMAGE_LENGTH 1080
+
 #define IMAGE_FILE_PATH "/data/img.jpg"
 
 /* 
@@ -50,7 +50,7 @@ typedef struct
     ** its OWN telemetry that you want to be sent
     */
     CAM_Hk_tlm_t   HkTelemetryPkt;   /* CAM Housekeeping Telemetry Packet */
-    CAM_Pic_tlm_t CamTelemtryPkt;
+    CAM_Pic_tlm_t CamTelemetryPkt;
     
     /*
     ** Operational data (not reported in housekeeping)...

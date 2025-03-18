@@ -15,6 +15,8 @@
 #define CAM_TAKE_PIC_CC			2
 #define CAM_SEND_PIC_CC			3
 
+#define MAX_IMAGE_LENGTH 1080
+
 /*
 ** CAM no argument command
 ** See also: #CAM_NOOP_CC, #CAM_RESET_COUNTER_CC, #CAM_STOP_CC, 
@@ -50,7 +52,7 @@ typedef struct
 typedef struct 
 {
     CFE_MSG_TelemetryHeader_t TlmHeader;
-    uint8		data[CAM_DATA_SIZE];
+    uint8		data[MAX_IMAGE_LENGTH];
     uint16      length;
     
 } CAM_Pic_tlm_t;
