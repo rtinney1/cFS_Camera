@@ -278,7 +278,7 @@ void CAM_ProcessGroundCommand(void)
             break;
 
         case CAM_TAKE_PIC_CC:
-            CAM_TakePicture():
+            CAM_TakePicture();
             break;
         case CAM_SEND_PIC_CC:
             CAM_SendPicture();
@@ -329,7 +329,7 @@ void CAM_SendPicture(void)
 
 void CAM_TakePicture(void)
 {
-    CFE_EVS_SendEvent(0, CFE_EVS_INFORMATION, "CAM: Taking picture");
+    CFE_EVS_SendEvent(CAM_COMMANDRST_INF_EID, CFE_EVS_EventType_INFORMATION, "CAM: Taking picture");
 
     FILE *file = fopen(IMAGE_FILE_PATH, "rb");
     if(file)
