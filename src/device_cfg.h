@@ -1,5 +1,5 @@
-#ifndef _ARDUCAM_CHECKOUT_DEVICE_CFG_H_
-#define _ARDUCAM_CHECKOUT_DEVICE_CFG_H_
+#ifndef _CAMERA_CHECKOUT_DEVICE_CFG_H_
+#define _CAMERA_CHECKOUT_DEVICE_CFG_H_
 
 /*
 ** Default CAM Configuration
@@ -20,4 +20,4 @@
 #define OV5640 
 //#define OV5642
 
-#endif /* _ARDUCAM_CHECKOUT_DEVICE_CFG_H_ */
+#endif /* _CAMERA_CHECKOUT_DEVICE_CFG_H_ */

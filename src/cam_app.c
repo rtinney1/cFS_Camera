@@ -31,9 +31,9 @@ ivv-itc@lists.nasa.gov
 CAM_AppData_t CAM_AppData;
 
 /*
-** arducam_AppMain() -- Application entry point and main process loop
+** CAMERA_AppMain() -- Application entry point and main process loop
 */
-void arducam_AppMain( void )
+void CAMERA_AppMain( void )
 {
     int32 status = 0;
     CAM_AppData.RunStatus = CFE_ES_RunStatus_APP_RUN;
